@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Color Ball Rush</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        ::-webkit-scrollbar {
+            display: none;
+        }
+
+        html, body {
+            overflow: hidden;
+            user-select: none;
+            -webkit-user-select: none;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            font-family: 'Arial', sans-serif;
+            color: white;
+            touch-action: none;
+            height: 100%;
+            -webkit-touch-callout: none;
+        }
+
+        #app {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        #game-area {
+            position: relative;
+            overflow: hidden;
+            flex: 1;
+        }
+
+        #game-canvas {
+            display: block;
+            background: #0f1525;
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+            width: 100%;
+            height: 100%;
+        }
+
+        #info-panel {
+            background: rgba(10, 15, 30, 0.95);
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            backdrop-filter: blur(5px);
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .stats {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .stat {
+            margin: 10px 0;
+            padding: 12px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: #a0a0ff;
+            margin-bottom: 5px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #4dffea;
+            text-shadow: 0 0 10px rgba(77, 255, 234, 0.5);
+        }
+
+        .mobile-controls {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            padding: 0 15px;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .mobile-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.25);
+            border: 3px solid rgba(255, 255, 255, 0.4);
+            color: white;
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .mobile-btn:active {
+            background: rgba(255, 255, 255, 0.5);
+            transform: scale(0.95);
+        }
+
+        .mobile-btn.action {
+            background: rgba(255, 100, 100, 0.4);
+            border-color: rgba(255, 100, 100, 0.6);
+        }
+
+        .mobile-btn.action:active {
+            background: rgba(255, 100, 100, 0.6);
+        }
+
+        .color-controls {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+
+        .color-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 3px solid white;
+            cursor: pointer;
+            transition: all 0.2s;
+            box-shadow: 0 0 10px currentColor;
+        }
+
+        .color-btn.active {
+            transform: scale(1.2);
+            box-shadow: 0 0 20px currentColor;
+        }
+
+        #controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            grid-template-rows: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        .control-btn {
+            width: 100%;
+            height: 60px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 44px;
+            min-width: 44px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .control-btn:active {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(0.95);
+        }
+
+        .control-btn.up {
+            grid-column: 2;
+            grid-row: 1;
+        }
+
+        .control-btn.down {
+            grid-column: 2;
+            grid-row: 3;
+        }
+
+        .control-btn.left {
+            grid-column: 1;
+            grid-row: 2;
+        }
+
+        .control-btn.right {
+            grid-column: 3;
+            grid-row: 2;
+        }
+
+        .control-btn.action {
+            grid-column: 2;
+            grid-row: 2;
+            background: rgba(255, 100, 100, 0.3);
+            border-color: rgba(255, 100, 100, 0.5);
+            font-size: 18px;
+        }
+
+        .control-btn.action:active {
+            background: rgba(255, 100, 100, 0.5);
+        }
+
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            backdrop-filter: blur(5px);
+            padding: 20px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .modal.hidden {
+            display: none;
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            padding: 30px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 500px;
+            width: 100%;
+            border: 3px solid rgba(77, 255, 234, 0.3);
+            box-shadow: 0 0 40px rgba(77, 255, 234, 0.2);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-title {
+            font-size: 32px;
+            color: #4dffea;
+            margin-bottom: 15px;
+            text-shadow: 0 0 15px rgba(77, 255, 234, 0.7);
+        }
+
+        .modal-text {
+            font-size: 16px;
+            line-height: 1.5;
+            color: #a0a0ff;
+            margin-bottom: 25px;
+            padding: 0 10px;
+        }
+
+        .modal-btn {
+            background: linear-gradient(135deg, #4dffea 0%, #2a9d8f 100%);
+            border: none;
+            color: #0f1525;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 50px;
+            cursor: pointer;
+            margin: 8px;
+            transition: all 0.3s;
+            min-width: 160px;
+            min-height: 50px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: 100%;
+            max-width: 250px;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .modal-btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 0 25px rgba(77, 255, 234, 0.5);
+        }
+
+        .modal-btn:active {
+            transform: scale(0.98);
+        }
+
+        .modal-btn.secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .modal-score {
+            font-size: 48px;
+            color: #ffd166;
+            font-weight: bold;
+            margin: 20px 0;
+            text-shadow: 0 0 20px rgba(255, 209, 102, 0.7);
+        }
+
+        #game-description {
+            font-size: 14px;
+            line-height: 1.4;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .game-instruction {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            border-left: 4px solid #4dffea;
+        }
+
+        .instruction-item {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+        }
+
+        .instruction-color {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            margin-right: 12px;
+            border: 2px solid white;
+        }
+
+        .instruction-text {
+            font-size: 14px;
+            color: white;
+            text-align: left;
+        }
+
+        @media (orientation: landscape) {
+            #app {
+                flex-direction: row;
+            }
+            
+            #game-area {
+                flex: 3;
+            }
+            
+            #info-panel {
+                flex: 1;
+                min-width: 220px;
+                max-width: 280px;
+                border-left: 3px solid rgba(77, 255, 234, 0.3);
+            }
+            
+            .mobile-controls {
+                display: none;
+            }
+            
+            .color-controls {
+                display: none;
+            }
+        }
+
+        @media (orientation: portrait) {
+            #app {
+                flex-direction: column;
+            }
+            
+            #game-area {
+                flex: 3;
+                width: 100%;
+                min-height: 60vh;
+            }
+            
+            #info-panel {
+                flex: 2;
+                min-height: 40vh;
+                border-top: 3px solid rgba(77, 255, 234, 0.3);
+                padding: 15px;
+                overflow-y: auto;
+            }
+            
+            #controls {
+                display: none;
+            }
+            
+            .mobile-controls {
+                display: flex;
+            }
+            
+            .color-controls {
+                display: flex;
+            }
+            
+            .modal-content {
+                padding: 20px 15px;
+                max-height: 85vh;
+            }
+            
+            .modal-title {
+                font-size: 28px;
+            }
+            
+            .modal-btn {
+                padding: 12px 24px;
+                font-size: 16px;
+                min-width: 140px;
+                margin: 5px;
+            }
+            
+            .stat {
+                padding: 8px;
+                margin: 5px 0;
+            }
+            
+            .stat-value {
+                font-size: 20px;
+            }
+            
+            .stat-label {
+                font-size: 12px;
+            }
+        }
+
+        @media (max-width: 768px) and (orientation: portrait) {
+            .mobile-btn {
+                width: 55px;
+                height: 55px;
+                font-size: 20px;
+            }
+            
+            .modal-title {
+                font-size: 24px;
+            }
+            
+            .modal-text {
+                font-size: 14px;
+            }
+            
+            .game-instruction {
+                padding: 12px;
+                margin: 10px 0;
+            }
+            
+            .instruction-item {
+                margin: 8px 0;
+                padding: 6px;
+            }
+        }
+
+        @media (max-height: 600px) and (orientation: landscape) {
+            #info-panel {
+                min-width: 180px;
+                padding: 10px;
+            }
+            
+            .stat {
+                padding: 8px;
+                margin: 5px 0;
+            }
+            
+            .stat-value {
+                font-size: 20px;
+            }
+            
+            .stat-label {
+                font-size: 12px;
+            }
+            
+            .control-btn {
+                height: 50px;
+                font-size: 20px;
+            }
+        }
+
+        .color-display {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            margin: 15px auto;
+            border: 4px solid white;
+            box-shadow: 0 0 20px currentColor;
+            transition: all 0.3s;
+        }
+
+        .color-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-top: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .controls-info {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .controls-info h3 {
+            color: #4dffea;
+            margin-bottom: 10px;
+            font-size: 16px;
+        }
+
+        .controls-list {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            text-align: left;
+        }
+
+        .control-item {
+            display: flex;
+            align-items: center;
+            padding: 5px;
+        }
+
+        .control-key {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px 10px;
+            border-radius: 5px;
+            margin-right: 10px;
+            min-width: 60px;
+            text-align: center;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div id="game-area">
+            <canvas id="game-canvas"></canvas>
+            <div class="mobile-controls hidden">
+                <button class="mobile-btn left">←</button>
+                <button class="mobile-btn up">↑</button>
+                <button class="mobile-btn right">→</button>
+                <button class="mobile-btn down">↓</button>
+            </div>
+        </div>
+        <div id="info-panel">
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-label" data-i18n="score-label">ОЧКИ</div>
+                    <div id="score-value" class="stat-value">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label" data-i18n="best-label">РЕКОРД</div>
+                    <div id="best-value" class="stat-value">0</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-label">ТВОЙ ЦВЕТ</div>
+                    <div id="color-display" class="color-display" style="background: #ff6b6b; color: #ff6b6b;"></div>
+                    <div id="color-name" class="color-name" style="color: #ff6b6b;">КРАСНЫЙ</div>
+                </div>
+            </div>
+            
+            <div class="color-controls hidden">
+                <div class="color-btn" style="background: #ff6b6b;" data-color="0"></div>
+                <div class="color-btn" style="background: #4ecdc4;" data-color="1"></div>
+                <div class="color-btn" style="background: #ffd166;" data-color="2"></div>
+                <div class="color-btn" style="background: #9d4edd;" data-color="3"></div>
+            </div>
+            
+            <div id="controls">
+                <button class="control-btn up">↑</button>
+                <button class="control-btn left">←</button>
+                <button class="control-btn action">ПРОБЕЛ</button>
+                <button class="control-btn right">→</button>
+                <button class="control-btn down">↓</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="start-modal" class="modal">
+        <div class="modal-content">
+            <h1 class="modal-title" data-i18n="game-title">COLOR BALL RUSH</h1>
+            <p class="modal-text" id="game-description">
+                <strong>ПРАВИЛА ПРОСТЫ:</strong>
+            </p>
+            
+            <div class="game-instruction">
+                <div class="instruction-item">
+                    <div class="instruction-color" style="background: #ff6b6b;"></div>
+                    <div class="instruction-text">
+                        <strong>КРАСНЫЙ шар</strong> проходит через КРАСНЫЕ ворота
+                    </div>
+                </div>
+                <div class="instruction-item">
+                    <div class="instruction-color" style="background: #4ecdc4;"></div>
+                    <div class="instruction-text">
+                        <strong>ГОЛУБОЙ шар</strong> проходит через ГОЛУБЫЕ ворота
+                    </div>
+                </div>
+                <div class="instruction-item">
+                    <div class="instruction-color" style="background: #ffd166;"></div>
+                    <div class="instruction-text">
+                        <strong>ЖЁЛТЫЙ шар</strong> проходит через ЖЁЛТЫЕ ворота
+                    </div>
+                </div>
+                <div class="instruction-item">
+                    <div class="instruction-color" style="background: #9d4edd;"></div>
+                    <div class="instruction-text">
+                        <strong>ФИОЛЕТОВЫЙ шар</strong> проходит через ФИОЛЕТОВЫЕ ворота
+                    </div>
+                </div>
+                <div class="instruction-item">
+                    <div class="instruction-color" style="background: #888888;"></div>
+                    <div class="instruction-text">
+                        <strong>СЕРЫЕ СТЕНЫ ✗</strong> избегай всех (всегда опасны)
+                    </div>
+                </div>
+                <div class="instruction-item">
+                    <div class="instruction-color" style="background: #ffd166; border: 2px dashed #ffd166;"></div>
+                    <div class="instruction-text">
+                        <strong>ЗВЁЗДОЧКИ</strong> дают +50 очков любого цвета
+                    </div>
+                </div>
+            </div>
+            
+            <p class="modal-text" style="font-size: 14px; color: #ffd166; margin-top: 15px;">
+                ⚠️ <strong>ВНИМАНИЕ:</strong> Если цвет шара НЕ совпадает с цветом ворот — игра заканчивается!
+            </p>
+            
+            <div class="controls-info">
+                <h3>🎮 УПРАВЛЕНИЕ:</h3>
+                <div class="controls-list">
+                    <div class="control-item">
+                        <div class="control-key">← →</div>
+                        <div class="instruction-text">Смена цвета шара</div>
+                    </div>
+                    <div class="control-item">
+                        <div class="control-key">A D</div>
+                        <div class="instruction-text">Смена цвета (альтернатива)</div>
+                    </div>
+                    <div class="control-item">
+                        <div class="control-key">↑ ↓</div>
+                        <div class="instruction-text">Ускорение / Торможение</div>
+                    </div>
+                    <div class="control-item">
+                        <div class="control-key">W S</div>
+                        <div class="instruction-text">Ускорение / Торможение (альтернатива)</div>
+                    </div>
+                    <div class="control-item">
+                        <div class="control-key">ПРОБЕЛ</div>
+                        <div class="instruction-text">Быстрое ускорение</div>
+                    </div>
+                </div>
+            </div>
+            
+            <button id="start-btn" class="modal-btn" data-i18n="play-button">ИГРАТЬ</button>
+        </div>
+    </div>
+
+    <div id="gameover-modal" class="modal hidden">
+        <div class="modal-content">
+            <h2 class="modal-title" data-i18n="gameover-title">ИГРА ОКОНЧЕНА</h2>
+            <div style="color: #a0a0ff; margin-bottom: 15px;">
+                Ты столкнулся с несовместимым цветом!
+            </div>
+            <div id="final-score" class="modal-score">0</div>
+            <div style="margin: 15px 0; color: #ffd166;">
+                Рекорд: <span id="final-best">0</span>
+            </div>
+            <button id="ad-reward-btn" class="modal-btn" style="background: linear-gradient(135deg, #f9c74f 0%, #f8961e 100%);">
+                🎁 Смотреть рекламу за +1 жизнь
+            </button>
+            <button id="restart-btn" class="modal-btn" data-i18n="restart-button">ИГРАТЬ СНОВА</button>
+            <button id="menu-btn" class="modal-btn secondary" data-i18n="menu-button">МЕНЮ</button>
+        </div>
+    </div>
+
+    <script src="/sdk.js"></script>
+    <script>
+        (function() {
+            'use strict';
+            
+            let ysdk = null;
+            let game = null;
+            let isMobile = false;
+            
+            function checkMobile() {
+                isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                return isMobile;
+            }
+            
+            async function initYandexSDK() {
+                if (typeof YaGames === 'undefined') {
+                    initGame();
+                    return;
+                }
+                
+                try {
+                    ysdk = await YaGames.init();
+                    const gameLanguage = ysdk.environment.i18n.lang || 'ru';
+                    applyLanguage(gameLanguage);
+                    
+                    initGame();
+                } catch (error) {
+                    initGame();
+                }
+            }
+            
+            function applyLanguage(lang) {
+                const texts = {
+                    'ru': {
+                        'game-title': 'COLOR BALL RUSH',
+                        'play-button': 'ИГРАТЬ',
+                        'score-label': 'Очки',
+                        'best-label': 'Рекорд',
+                        'gameover-title': 'Игра окончена',
+                        'restart-button': 'Играть снова',
+                        'menu-button': 'Меню'
+                    },
+                    'en': {
+                        'game-title': 'COLOR BALL RUSH',
+                        'play-button': 'PLAY',
+                        'score-label': 'Score',
+                        'best-label': 'Best',
+                        'gameover-title': 'Game Over',
+                        'restart-button': 'Play Again',
+                        'menu-button': 'Menu'
+                    }
+                };
+                
+                const currentTexts = texts[lang] || texts['ru'];
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.getAttribute('data-i18n');
+                    if (currentTexts[key]) el.textContent = currentTexts[key];
+                });
+            }
+            
+            class ColorBallGame {
+                constructor() {
+                    this.canvas = document.getElementById('game-canvas');
+                    this.ctx = this.canvas.getContext('2d');
+                    this.score = 0;
+                    this.best = parseInt(localStorage.getItem('colorBallBest') || '0');
+                    this.gameActive = false;
+                    this.gameOver = false;
+                    this.level = 1;
+                    
+                    this.ball = {
+                        x: 400,
+                        y: 300,
+                        radius: 35,
+                        color: '#ff6b6b',
+                        colorIndex: 0,
+                        speedX: 0,
+                        speedY: 0,
+                        maxSpeed: 7
+                    };
+                    
+                    this.colors = [
+                        { value: '#ff6b6b', name: 'КРАСНЫЙ', key: 'red' },
+                        { value: '#4ecdc4', name: 'ГОЛУБОЙ', key: 'blue' },
+                        { value: '#ffd166', name: 'ЖЁЛТЫЙ', key: 'yellow' },
+                        { value: '#9d4edd', name: 'ФИОЛЕТОВЫЙ', key: 'purple' }
+                    ];
+                    
+                    this.gates = [];
+                    this.walls = [];
+                    this.stars = [];
+                    this.particles = [];
+                    
+                    this.keys = {};
+                    this.touchControls = {};
+                    
+                    this.speed = 2;
+                    this.gateFrequency = 180;
+                    this.wallFrequency = 120;
+                    this.starFrequency = 240;
+                    this.frameCount = 0;
+                    
+                    this.setupCanvas();
+                    this.setupControls();
+                    this.setupAudioPause();
+                    this.updateBestScore();
+                }
+                
+                setupCanvas() {
+                    this.resizeCanvas();
+                    window.addEventListener('resize', () => this.resizeCanvas());
+                }
+                
+                resizeCanvas() {
+                    const gameArea = document.getElementById('game-area');
+                    this.canvas.width = gameArea.clientWidth;
+                    this.canvas.height = gameArea.clientHeight;
+                    
+                    if (!this.gameActive) {
+                        this.ball.x = this.canvas.width / 2;
+                        this.ball.y = this.canvas.height / 2;
+                    }
+                }
+                
+                setupControls() {
+                    window.addEventListener('keydown', (e) => {
+                        const code = e.code;
+                        this.keys[code] = true;
+                        
+                        if (code === 'ArrowLeft' || code === 'KeyA') this.changeColor(-1);
+                        if (code === 'ArrowRight' || code === 'KeyD') this.changeColor(1);
+                        if (code === 'ArrowUp' || code === 'KeyW' || code === 'Space') this.boost();
+                        if (code === 'ArrowDown' || code === 'KeyS') this.brake();
+                    });
+                    
+                    window.addEventListener('keyup', (e) => {
+                        this.keys[e.code] = false;
+                    });
+                    
+                    const controlButtons = document.querySelectorAll('.control-btn');
+                    controlButtons.forEach(btn => {
+                        btn.addEventListener('mousedown', (e) => {
+                            e.preventDefault();
+                            const dir = btn.textContent;
+                            this.handleButtonPress(dir);
+                        });
+                        
+                        btn.addEventListener('mouseup', () => {
+                            this.handleButtonRelease();
+                        });
+                    });
+                    
+                    const mobileButtons = document.querySelectorAll('.mobile-btn');
+                    mobileButtons.forEach(btn => {
+                        btn.addEventListener('touchstart', (e) => {
+                            e.preventDefault();
+                            const dir = btn.textContent;
+                            this.handleButtonPress(dir);
+                            e.stopPropagation();
+                        }, { passive: false });
+                        
+                        btn.addEventListener('touchend', (e) => {
+                            e.preventDefault();
+                            this.handleButtonRelease();
+                            e.stopPropagation();
+                        }, { passive: false });
+                    });
+                    
+                    const colorButtons = document.querySelectorAll('.color-btn');
+                    colorButtons.forEach(btn => {
+                        btn.addEventListener('click', (e) => {
+                            const colorIndex = parseInt(btn.getAttribute('data-color'));
+                            this.setColor(colorIndex);
+                        });
+                        
+                        btn.addEventListener('touchstart', (e) => {
+                            e.preventDefault();
+                            const colorIndex = parseInt(btn.getAttribute('data-color'));
+                            this.setColor(colorIndex);
+                            e.stopPropagation();
+                        }, { passive: false });
+                    });
+                    
+                    ['contextmenu', 'selectstart', 'touchstart', 'touchend', 'touchmove'].forEach(eventName => {
+                        document.addEventListener(eventName, e => {
+                            if (eventName === 'touchmove' && e.target === this.canvas) {
+                                e.preventDefault();
+                            }
+                            if (eventName === 'contextmenu' || eventName === 'selectstart') {
+                                e.preventDefault();
+                                return false;
+                            }
+                        }, { passive: eventName !== 'touchmove' });
+                    });
+                    
+                    ['touchstart', 'touchend', 'touchmove'].forEach(eventName => {
+                        this.canvas.addEventListener(eventName, e => {
+                            if (this.gameActive) {
+                                e.preventDefault();
+                            }
+                        }, { passive: false });
+                    });
+                }
+                
+                setupAudioPause() {
+                    document.addEventListener('visibilitychange', () => {
+                        if (document.hidden && this.gameActive) {
+                        }
+                    });
+                }
+                
+                handleButtonPress(dir) {
+                    switch(dir) {
+                        case '←':
+                        case 'left':
+                            this.changeColor(-1);
+                            break;
+                        case '→':
+                        case 'right':
+                            this.changeColor(1);
+                            break;
+                        case '↑':
+                        case 'up':
+                            this.boost();
+                            break;
+                        case '↓':
+                        case 'down':
+                            this.brake();
+                            break;
+                    }
+                }
+                
+                handleButtonRelease() {
+                    setTimeout(() => {
+                        this.ball.speedX *= 0.95;
+                        this.ball.speedY *= 0.95;
+                    }, 50);
+                }
+                
+                changeColor(direction) {
+                    const newIndex = (this.ball.colorIndex + direction + this.colors.length) % this.colors.length;
+                    this.setColor(newIndex);
+                }
+                
+                setColor(index) {
+                    this.ball.colorIndex = index;
+                    this.ball.color = this.colors[index].value;
+                    
+                    const colorDisplay = document.getElementById('color-display');
+                    const colorName = document.getElementById('color-name');
+                    colorDisplay.style.background = this.ball.color;
+                    colorDisplay.style.color = this.ball.color;
+                    colorName.textContent = this.colors[index].name;
+                    colorName.style.color = this.ball.color;
+                    
+                    document.querySelectorAll('.color-btn').forEach((btn, i) => {
+                        if (i === index) {
+                            btn.classList.add('active');
+                        } else {
+                            btn.classList.remove('active');
+                        }
+                    });
+                    
+                    this.createParticles(this.ball.x, this.ball.y, this.ball.color);
+                }
+                
+                boost() {
+                    const angle = Math.atan2(this.ball.speedY, this.ball.speedX);
+                    this.ball.speedX += Math.cos(angle) * 0.3;
+                    this.ball.speedY += Math.sin(angle) * 0.3;
+                    
+                    const speed = Math.sqrt(this.ball.speedX * this.ball.speedX + this.ball.speedY * this.ball.speedY);
+                    if (speed > this.ball.maxSpeed) {
+                        this.ball.speedX = (this.ball.speedX / speed) * this.ball.maxSpeed;
+                        this.ball.speedY = (this.ball.speedY / speed) * this.ball.maxSpeed;
+                    }
+                    
+                    this.createParticles(this.ball.x, this.ball.y, '#ffffff');
+                }
+                
+                brake() {
+                    this.ball.speedX *= 0.85;
+                    this.ball.speedY *= 0.85;
+                    this.createParticles(this.ball.x, this.ball.y, '#aaaaaa');
+                }
+                
+                createParticles(x, y, color) {
+                    for (let i = 0; i < 5; i++) {
+                        this.particles.push({
+                            x: x,
+                            y: y,
+                            size: Math.random() * 4 + 2,
+                            speedX: (Math.random() - 0.5) * 6,
+                            speedY: (Math.random() - 0.5) * 6,
+                            color: color,
+                            life: 25
+                        });
+                    }
+                }
+                
+                updateBestScore() {
+                    document.getElementById('best-value').textContent = this.best;
+                }
+                
+                start() {
+                    this.gameActive = true;
+                    this.gameOver = false;
+                    this.score = 0;
+                    this.level = 1;
+                    this.speed = 2;
+                    this.frameCount = 0;
+                    
+                    this.ball.x = this.canvas.width / 2;
+                    this.ball.y = this.canvas.height / 2;
+                    this.ball.speedX = 0;
+                    this.ball.speedY = 0;
+                    
+                    this.gates = [];
+                    this.walls = [];
+                    this.stars = [];
+                    this.particles = [];
+                    
+                    this.updateScore();
+                    
+                    const isPortrait = window.innerHeight > window.innerWidth;
+                    if (isPortrait && checkMobile()) {
+                        document.querySelector('.mobile-controls').classList.remove('hidden');
+                        document.querySelector('.color-controls').classList.remove('hidden');
+                        document.querySelectorAll('.color-btn')[0].classList.add('active');
+                    }
+                    
+                    this.gameLoop();
+                }
+                
+                gameLoop() {
+                    if (!this.gameActive) return;
+                    
+                    this.update();
+                    this.render();
+                    
+                    requestAnimationFrame(() => this.gameLoop());
+                }
+                
+                update() {
+                    if (this.gameOver) return;
+                    
+                    this.frameCount++;
+                    
+                    this.ball.x += this.ball.speedX;
+                    this.ball.y += this.ball.speedY;
+                    
+                    const bounce = 0.7;
+                    if (this.ball.x < this.ball.radius) {
+                        this.ball.x = this.ball.radius;
+                        this.ball.speedX = Math.abs(this.ball.speedX) * bounce;
+                    }
+                    if (this.ball.x > this.canvas.width - this.ball.radius) {
+                        this.ball.x = this.canvas.width - this.ball.radius;
+                        this.ball.speedX = -Math.abs(this.ball.speedX) * bounce;
+                    }
+                    if (this.ball.y < this.ball.radius) {
+                        this.ball.y = this.ball.radius;
+                        this.ball.speedY = Math.abs(this.ball.speedY) * bounce;
+                    }
+                    if (this.ball.y > this.canvas.height - this.ball.radius) {
+                        this.ball.y = this.canvas.height - this.ball.radius;
+                        this.ball.speedY = -Math.abs(this.ball.speedY) * bounce;
+                    }
+                    
+                    let creationChance = 1;
+                    if (this.frameCount < 180) {
+                        creationChance = 0.3;
+                    }
+                    
+                    if (this.frameCount % this.gateFrequency === 0 && Math.random() < creationChance) {
+                        this.createGate();
+                    }
+                    
+                    if (this.frameCount % this.wallFrequency === 0 && Math.random() < creationChance) {
+                        this.createWall();
+                    }
+                    
+                    if (this.frameCount % this.starFrequency === 0 && Math.random() < creationChance * 0.5) {
+                        this.createStar();
+                    }
+                    
+                    for (let i = this.gates.length - 1; i >= 0; i--) {
+                        const gate = this.gates[i];
+                        gate.y += this.speed;
+                        
+                        if (gate.y > this.canvas.height + 100) {
+                            this.gates.splice(i, 1);
+                            continue;
+                        }
+                        
+                        const dx = this.ball.x - gate.x;
+                        const dy = this.ball.y - gate.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        const minDistance = this.ball.radius + gate.radius;
+                        
+                        if (distance < minDistance) {
+                            if (gate.colorIndex === this.ball.colorIndex) {
+                                this.score += 10;
+                                this.updateScore();
+                                this.createParticles(gate.x, gate.y, this.ball.color);
+                                this.gates.splice(i, 1);
+                            } else {
+                                this.endGame();
+                                return;
+                            }
+                        }
+                    }
+                    
+                    for (let i = this.walls.length - 1; i >= 0; i--) {
+                        const wall = this.walls[i];
+                        wall.y += this.speed;
+                        
+                        if (wall.y > this.canvas.height + 100) {
+                            this.walls.splice(i, 1);
+                            continue;
+                        }
+                        
+                        const dx = this.ball.x - wall.x;
+                        const dy = this.ball.y - wall.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < this.ball.radius + wall.radius) {
+                            this.endGame();
+                            return;
+                        }
+                    }
+                    
+                    for (let i = this.stars.length - 1; i >= 0; i--) {
+                        const star = this.stars[i];
+                        star.y += this.speed;
+                        
+                        if (star.y > this.canvas.height + 100) {
+                            this.stars.splice(i, 1);
+                            continue;
+                        }
+                        
+                        const dx = this.ball.x - star.x;
+                        const dy = this.ball.y - star.y;
+                        const distance = Math.sqrt(dx * dx + dy * dy);
+                        
+                        if (distance < this.ball.radius + star.radius) {
+                            this.score += 50;
+                            this.updateScore();
+                            this.createParticles(star.x, star.y, star.color);
+                            this.stars.splice(i, 1);
+                        }
+                    }
+                    
+                    for (let i = this.particles.length - 1; i >= 0; i--) {
+                        const p = this.particles[i];
+                        p.x += p.speedX;
+                        p.y += p.speedY;
+                        p.life--;
+                        
+                        if (p.life <= 0) {
+                            this.particles.splice(i, 1);
+                        }
+                    }
+                    
+                    if (this.score > this.level * 100) {
+                        this.level++;
+                        this.speed += 0.3;
+                        this.ball.maxSpeed += 0.2;
+                        this.gateFrequency = Math.max(100, 180 - this.level * 8);
+                        this.wallFrequency = Math.max(80, 120 - this.level * 5);
+                        
+                        for (let i = 0; i < 15; i++) {
+                            this.createParticles(
+                                Math.random() * this.canvas.width,
+                                Math.random() * this.canvas.height,
+                                '#ffffff'
+                            );
+                        }
+                    }
+                }
+                
+                createGate() {
+                    const colorIndex = Math.floor(Math.random() * this.colors.length);
+                    this.gates.push({
+                        x: Math.random() * (this.canvas.width - 100) + 50,
+                        y: -50,
+                        radius: 35,
+                        colorIndex: colorIndex,
+                        color: this.colors[colorIndex].value
+                    });
+                }
+                
+                createWall() {
+                    this.walls.push({
+                        x: Math.random() * (this.canvas.width - 100) + 50,
+                        y: -50,
+                        radius: 25,
+                        color: '#888888'
+                    });
+                }
+                
+                createStar() {
+                    this.stars.push({
+                        x: Math.random() * (this.canvas.width - 100) + 50,
+                        y: -50,
+                        radius: 20,
+                        color: '#ffd166'
+                    });
+                }
+                
+                render() {
+                    this.ctx.fillStyle = '#0f1525';
+                    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                    
+                    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
+                    for (let i = 0; i < 15; i++) {
+                        const x = (i * 120 + this.frameCount * 0.3) % (this.canvas.width + 200) - 100;
+                        const y = (i * 90) % this.canvas.height;
+                        this.ctx.beginPath();
+                        this.ctx.arc(x, y, 1.5, 0, Math.PI * 2);
+                        this.ctx.fill();
+                    }
+                    
+                    this.gates.forEach(gate => {
+                        this.ctx.beginPath();
+                        this.ctx.arc(gate.x, gate.y, gate.radius, 0, Math.PI * 2);
+                        this.ctx.fillStyle = gate.color;
+                        this.ctx.fill();
+                        this.ctx.strokeStyle = 'white';
+                        this.ctx.lineWidth = 2;
+                        this.ctx.stroke();
+                        
+                        this.ctx.beginPath();
+                        this.ctx.arc(gate.x, gate.y, gate.radius - 12, 0, Math.PI * 2);
+                        this.ctx.fillStyle = '#0f1525';
+                        this.ctx.fill();
+                        
+                        this.ctx.fillStyle = 'white';
+                        this.ctx.font = 'bold 14px Arial';
+                        this.ctx.textAlign = 'center';
+                        this.ctx.textBaseline = 'middle';
+                        const colorName = this.colors[gate.colorIndex].name.substring(0, 3);
+                        this.ctx.fillText(colorName, gate.x, gate.y);
+                    });
+                    
+                    this.walls.forEach(wall => {
+                        this.ctx.beginPath();
+                        this.ctx.arc(wall.x, wall.y, wall.radius, 0, Math.PI * 2);
+                        this.ctx.fillStyle = wall.color;
+                        this.ctx.fill();
+                        this.ctx.strokeStyle = 'white';
+                        this.ctx.lineWidth = 2;
+                        this.ctx.stroke();
+                        
+                        this.ctx.fillStyle = 'white';
+                        this.ctx.font = 'bold 16px Arial';
+                        this.ctx.textAlign = 'center';
+                        this.ctx.textBaseline = 'middle';
+                        this.ctx.fillText('✗', wall.x, wall.y);
+                    });
+                    
+                    this.stars.forEach(star => {
+                        this.ctx.save();
+                        this.ctx.translate(star.x, star.y);
+                        this.ctx.rotate(this.frameCount * 0.02);
+                        
+                        this.ctx.fillStyle = star.color;
+                        for (let i = 0; i < 5; i++) {
+                            this.ctx.rotate((Math.PI * 2) / 5);
+                            this.ctx.beginPath();
+                            this.ctx.moveTo(0, 0 - star.radius);
+                            this.ctx.lineTo(0 - star.radius * 0.4, 0 - star.radius * 0.4);
+                            this.ctx.lineTo(0 - star.radius, 0);
+                            this.ctx.lineTo(0 - star.radius * 0.4, 0 + star.radius * 0.4);
+                            this.ctx.lineTo(0, 0 + star.radius);
+                            this.ctx.lineTo(0 + star.radius * 0.4, 0 + star.radius * 0.4);
+                            this.ctx.lineTo(0 + star.radius, 0);
+                            this.ctx.lineTo(0 + star.radius * 0.4, 0 - star.radius * 0.4);
+                            this.ctx.closePath();
+                            this.ctx.fill();
+                        }
+                        
+                        this.ctx.restore();
+                    });
+                    
+                    this.ctx.beginPath();
+                    this.ctx.arc(this.ball.x, this.ball.y, this.ball.radius, 0, Math.PI * 2);
+                    this.ctx.fillStyle = this.ball.color;
+                    this.ctx.fill();
+                    
+                    this.ctx.strokeStyle = 'white';
+                    this.ctx.lineWidth = 3;
+                    this.ctx.stroke();
+                    
+                    this.ctx.beginPath();
+                    this.ctx.arc(this.ball.x, this.ball.y, this.ball.radius * 0.7, 0, Math.PI * 2);
+                    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.2)';
+                    this.ctx.fill();
+                    
+                    this.ctx.beginPath();
+                    this.ctx.arc(this.ball.x, this.ball.y, this.ball.radius + 5, 0, Math.PI * 2);
+                    this.ctx.strokeStyle = this.ball.color;
+                    this.ctx.lineWidth = 2;
+                    this.ctx.globalAlpha = 0.4;
+                    this.ctx.stroke();
+                    this.ctx.globalAlpha = 1;
+                    
+                    this.particles.forEach(p => {
+                        this.ctx.globalAlpha = p.life / 25;
+                        this.ctx.fillStyle = p.color;
+                        this.ctx.beginPath();
+                        this.ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                        this.ctx.fill();
+                    });
+                    this.ctx.globalAlpha = 1;
+                    
+                    this.ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+                    this.ctx.font = '16px Arial';
+                    this.ctx.textAlign = 'left';
+                    this.ctx.fillText(`Уровень ${this.level}`, 10, 25);
+                    this.ctx.textAlign = 'right';
+                    this.ctx.fillText(`${this.score} очков`, this.canvas.width - 10, 25);
+                }
+                
+                updateScore() {
+                    document.getElementById('score-value').textContent = this.score;
+                    if (this.score > this.best) {
+                        this.best = this.score;
+                        localStorage.setItem('colorBallBest', this.best);
+                        this.updateBestScore();
+                    }
+                }
+                
+                endGame() {
+                    this.gameOver = true;
+                    this.gameActive = false;
+                    
+                    document.getElementById('final-score').textContent = this.score;
+                    document.getElementById('final-best').textContent = this.best;
+                    document.getElementById('gameover-modal').classList.remove('hidden');
+                    
+                    for (let i = 0; i < 30; i++) {
+                        this.createParticles(this.ball.x, this.ball.y, this.ball.color);
+                    }
+                    
+                    document.querySelector('.mobile-controls').classList.add('hidden');
+                    document.querySelector('.color-controls').classList.add('hidden');
+                }
+            }
+            
+            function initGame() {
+                game = new ColorBallGame();
+                
+                document.getElementById('start-btn').addEventListener('click', startGame);
+                document.getElementById('start-btn').addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    startGame();
+                }, { passive: false });
+                
+                document.getElementById('restart-btn').addEventListener('click', () => {
+                    document.getElementById('gameover-modal').classList.add('hidden');
+                    game.start();
+                });
+                document.getElementById('restart-btn').addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    document.getElementById('gameover-modal').classList.add('hidden');
+                    game.start();
+                }, { passive: false });
+                
+                document.getElementById('menu-btn').addEventListener('click', () => {
+                    document.getElementById('gameover-modal').classList.add('hidden');
+                    document.getElementById('start-modal').classList.remove('hidden');
+                });
+                document.getElementById('menu-btn').addEventListener('touchstart', (e) => {
+                    e.preventDefault();
+                    document.getElementById('gameover-modal').classList.add('hidden');
+                    document.getElementById('start-modal').classList.remove('hidden');
+                }, { passive: false });
+                
+                document.getElementById('ad-reward-btn').addEventListener('click', async function() {
+                    const adBtn = this;
+                    if (!ysdk?.adv) {
+                        adBtn.style.opacity = '0.5';
+                        return;
+                    }
+
+                    const originalText = adBtn.textContent;
+                    adBtn.textContent = 'Загрузка...';
+                    adBtn.disabled = true;
+
+                    try {
+                        if (game && game.gameActive) {
+                            game.gameActive = false;
+                        }
+
+                        await ysdk.adv.showRewardedVideo({
+                            callbacks: {
+                                onOpen: () => {
+                                },
+                                onRewarded: () => {
+                                    document.getElementById('gameover-modal').classList.add('hidden');
+                                    game.ball.x = game.canvas.width / 2;
+                                    game.ball.y = game.canvas.height / 2;
+                                    game.gameActive = true;
+                                    game.gameOver = false;
+                                    game.gameLoop();
+                                },
+                                onClose: () => {
+                                    adBtn.textContent = originalText;
+                                    adBtn.disabled = false;
+                                },
+                                onError: () => {
+                                    adBtn.textContent = originalText;
+                                    adBtn.disabled = false;
+                                    if (game && !game.gameActive && !game.gameOver) {
+                                        game.gameActive = true;
+                                        game.gameLoop();
+                                    }
+                                }
+                            }
+                        });
+                    } catch (error) {
+                        adBtn.textContent = originalText;
+                        adBtn.disabled = false;
+                    }
+                });
+                
+                window.startGame = startGame;
+            }
+            
+            function startGame() {
+                document.getElementById('start-modal').classList.add('hidden');
+                
+                setTimeout(() => {
+                    if (ysdk && ysdk.features?.LoadingAPI) {
+                        ysdk.features.LoadingAPI.ready();
+                    }
+                    game.start();
+                }, 100);
+            }
+            
+            checkMobile();
+            initYandexSDK();
+        })();
+    </script>
+</body>
+</html>
