@@ -1,0 +1,12 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "klik-trader"
+version = "0.1.0"
+description = "Professional trading advisor and signal engine"
+requires-python = ">=3.11"
+
+[tool.setuptools.packages.find]
+where = ["src"]
